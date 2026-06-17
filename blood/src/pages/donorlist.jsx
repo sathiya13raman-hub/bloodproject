@@ -1,30 +1,41 @@
 import './donorlist.css';
-import React, { useMemo, useState } from "react";
-
-const SAMPLE_DONORS = [
-  { id: 1, name: 'Asha Kumar', blood: 'A+', city: 'Mumbai', phone: '+919876543210', lastDonated: '2024-12-10' },
-  { id: 2, name: 'Ravi Patel', blood: 'O+', city: 'Ahmedabad', phone: '+919812345678', lastDonated: '2025-03-01' },
-  { id: 3, name: 'Priya Sharma', blood: 'B+', city: 'Delhi', phone: '+919701234567', lastDonated: '2024-09-18' },
-  { id: 4, name: 'John Doe', blood: 'AB+', city: 'Bengaluru', phone: '+919600112233', lastDonated: '2025-01-05' },
-  { id: 5, name: 'Sangeeta Rao', blood: 'O-', city: 'Hyderabad', phone: '+919898765432', lastDonated: '2024-11-22' }
-];
+import React, { useEffect, useMemo, useState } from 'react';
+import { fetchDonors } from '../api';
 
 function DonorList() {
   const [blood, setBlood] = useState('All');
   const [location, setLocation] = useState('');
   const [query, setQuery] = useState('');
+  const [donors, setDonors] = useState([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const loadDonors = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const params = {};
+        if (location.trim()) params.location = location.trim();
+        if (query.trim()) params.search = query.trim();
+        const response = await fetchDonors(params);
+        setDonors(response || []);
+      } catch (err) {
+        setError(err.message || 'Unable to load donors.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDonors();
+  }, [location, query]);
 
   const filtered = useMemo(() => {
-    return SAMPLE_DONORS.filter(d => {
+    return donors.filter((d) => {
       if (blood !== 'All' && d.blood !== blood) return false;
-      if (location.trim() && !d.city.toLowerCase().includes(location.trim().toLowerCase())) return false;
-      if (query.trim()) {
-        const q = query.trim().toLowerCase();
-        return d.name.toLowerCase().includes(q) || d.phone.includes(q);
-      }
       return true;
     });
-  }, [blood, location, query]);
+  }, [blood, donors]);
 
   const handleWhatsApp = (donor) => {
     const phone = donor.phone.replace(/[^0-9]/g, '');
@@ -67,20 +78,28 @@ function DonorList() {
       </div>
 
       <div className="donor-list">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="empty">Loading donors...</div>
+        ) : error ? (
+          <div className="empty">{error}</div>
+        ) : filtered.length === 0 ? (
           <div className="empty">No donors found. Try adjusting filters.</div>
         ) : (
           filtered.map(donor => (
             <div className="donor-card" key={donor.id}>
               <div className="donor-meta">
                 <div className="donor-name">{donor.name}</div>
-                <div className="donor-details">{donor.city} • Blood {donor.blood}</div>
-                <div className="donor-last">Last donated: {donor.lastDonated}</div>
+                <div className="donor-details">{donor.city} • Blood {donor.blood || donor.gender || 'N/A'}</div>
+                <div className="donor-last">Last donated: {donor.lastDonated || donor.recent_date || 'Unknown'}</div>
               </div>
 
               <div className="donor-actions">
-                <a className="cta call" href={`tel:${donor.phone}`}>Call</a>
-                <button className="cta request" onClick={() => handleWhatsApp(donor)}>WhatsApp</button>
+                <a className="cta call" href={`tel:${donor.phone || donor.phonenumber}`}>
+                  Call
+                </a>
+                <button className="cta request" onClick={() => handleWhatsApp(donor)}>
+                  WhatsApp
+                </button>
               </div>
             </div>
           ))

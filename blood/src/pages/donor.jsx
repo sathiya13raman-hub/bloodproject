@@ -1,6 +1,7 @@
 import './donor.css';
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createDonor, getAccessToken } from '../api';
 
 function DonorRegistration() {
   const navigate = useNavigate();
@@ -10,11 +11,14 @@ function DonorRegistration() {
     dob: '',
     mobile: '',
     address: '',
+    city: '',
     email: '',
     gender: '',
     lastDonatedDate: '',
-    maritalStatus: ''
+    maritalStatus: '',
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -24,15 +28,39 @@ function DonorRegistration() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Form validation
-    if (!formData.name || !formData.bloodGroup || !formData.email || !formData.mobile) {
-      alert('Please fill in all required fields');
+    setError('');
+
+    if (!formData.name || !formData.email || !formData.mobile) {
+      setError('Please fill in all required fields.');
       return;
     }
-    // Navigate to thank you page
-    navigate('/thank-you');
+
+    if (!getAccessToken()) {
+      navigate('/signin');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await createDonor({
+        name: formData.name,
+        dob: formData.dob || null,
+        mobile: formData.mobile,
+        address: formData.address,
+        city: formData.city,
+        gender: formData.gender,
+        lastDonatedDate: formData.lastDonatedDate || null,
+        maritalStatus: formData.maritalStatus,
+      });
+      navigate('/thank-you');
+    } catch (err) {
+      setError(err.message || 'Unable to submit registration.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -103,12 +131,23 @@ function DonorRegistration() {
 
           <div className="input-group">
             <label>Address</label>
-            <textarea 
+            <textarea
               name="address"
               value={formData.address}
               onChange={handleInputChange}
               placeholder="Enter complete address"
             ></textarea>
+          </div>
+
+          <div className="input-group">
+            <label>City</label>
+            <input
+              type="text"
+              name="city"
+              value={formData.city}
+              onChange={handleInputChange}
+              placeholder="Enter city"
+            />
           </div>
 
           <div className="input-group">
@@ -182,8 +221,10 @@ function DonorRegistration() {
             </div>
           </div>
 
-          <button type="submit" className="submit-btn">
-            Submit Registration
+          {error && <p className="form-error">{error}</p>}
+
+          <button type="submit" className="submit-btn" disabled={loading}>
+            {loading ? 'Submitting...' : 'Submit Registration'}
           </button>
         </form>
       </div>

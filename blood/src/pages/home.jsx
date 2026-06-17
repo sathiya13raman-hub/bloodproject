@@ -3,6 +3,16 @@ import Card from '../components/card.jsx'
 import { useNavigate } from 'react-router-dom';
 function Home(){
   const navigate = useNavigate();
+
+  const handleDonorClick = () => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      navigate('/donor-registration');
+    } else {
+      navigate('/signin');
+    }
+  };
+
   return(
     <div className="homebody">
       <div className="hero">
@@ -11,7 +21,7 @@ function Home(){
           <h1>LifeBlood helps donors and recipients connect faster.</h1>
           <p className="hero-text">Donate with confidence, find lifesaving blood quickly, and make a measurable impact in your neighborhood. LifeBlood is designed to be easy, reliable, and responsive wherever you are.</p>
           <div className="buttonsspace">
-            <button className="click primary" onClick={() => navigate('/donor-registration')}>
+            <button className="click primary" onClick={handleDonorClick}>
               I am a donor
             </button>
             <button className="click secondary" onClick={() => navigate('/donor-list')}>
