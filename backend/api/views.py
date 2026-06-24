@@ -1,4 +1,6 @@
 from django.db.models import Q
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,7 +19,9 @@ from .serializers import (
 from .tokens import create_tokens, decode_token
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterView(APIView):
+    authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -35,7 +39,9 @@ class RegisterView(APIView):
         )
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
+    authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -43,17 +49,25 @@ class LoginView(APIView):
         serializer.is_valid(raise_exception=True)
         signin = serializer.validated_data['signin']
         tokens = create_tokens(signin)
+        
+        # Retrieve donor details for the user
+        donor_profile = DonorTable.objects.filter(userid=signin.userid).first()
+        donor_data = DonorSerializer(donor_profile).data if donor_profile else None
+        
         return Response(
             {
                 'message': 'Login successful.',
                 'user': SignInSerializer(signin).data,
+                'donor_profile': donor_data,
                 'tokens': tokens,
             },
             status=status.HTTP_200_OK,
         )
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class TokenRefreshView(APIView):
+    authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -90,9 +104,15 @@ class ProfileView(APIView):
         return Response(data)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class DonorListCreateView(generics.ListCreateAPIView):
     authentication_classes = [SignInAuthentication]
     permission_classes = [permissions.AllowAny]
+
+    def get_authenticators(self):
+        if self.request.method == 'GET':
+            return []
+        return super().get_authenticators()
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -145,9 +165,15 @@ class DonorDetailView(generics.RetrieveAPIView):
     serializer_class = DonorSerializer
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class RecipientListCreateView(generics.ListCreateAPIView):
     authentication_classes = [SignInAuthentication]
     permission_classes = [permissions.AllowAny]
+
+    def get_authenticators(self):
+        if self.request.method == 'GET':
+            return []
+        return super().get_authenticators()
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

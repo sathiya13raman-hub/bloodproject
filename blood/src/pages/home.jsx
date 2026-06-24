@@ -5,12 +5,7 @@ function Home(){
   const navigate = useNavigate();
 
   const handleDonorClick = () => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      navigate('/donor-registration');
-    } else {
-      navigate('/signin');
-    }
+    navigate('/signin');
   };
 
   return(
@@ -24,7 +19,7 @@ function Home(){
             <button className="click primary" onClick={handleDonorClick}>
               I am a donor
             </button>
-            <button className="click secondary" onClick={() => navigate('/donor-list')}>
+            <button className="click secondary" onClick={() => navigate('/donor-list', { state: { showNeedLater: true } })}>
               Need blood
             </button>
           </div>

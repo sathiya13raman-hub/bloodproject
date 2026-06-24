@@ -26,7 +26,7 @@ function Signin() {
         password: formData.password,
       });
       saveAuthTokens(response.tokens);
-      navigate('/donor-registration');
+      navigate('/recipient-list');
     } catch (err) {
       setError(err.message || 'Unable to sign in.');
     }

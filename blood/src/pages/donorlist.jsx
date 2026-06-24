@@ -1,14 +1,22 @@
 import './donorlist.css';
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchDonors } from '../api';
 
 function DonorList() {
+  const locationState = useLocation();
+  const navigate = useNavigate();
   const [blood, setBlood] = useState('All');
   const [location, setLocation] = useState('');
   const [query, setQuery] = useState('');
   const [donors, setDonors] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showNeedLater, setShowNeedLater] = useState(false);
+
+  useEffect(() => {
+    setShowNeedLater(locationState?.state?.showNeedLater === true);
+  }, [locationState?.state]);
 
   useEffect(() => {
     const loadDonors = async () => {
@@ -19,7 +27,7 @@ function DonorList() {
         if (location.trim()) params.location = location.trim();
         if (query.trim()) params.search = query.trim();
         const response = await fetchDonors(params);
-        setDonors(response || []);
+        setDonors(Array.isArray(response) ? response : response?.results || []);
       } catch (err) {
         setError(err.message || 'Unable to load donors.');
       } finally {
@@ -43,11 +51,24 @@ function DonorList() {
     window.open(url, '_blank');
   };
 
+  const handleNeedLater = () => {
+    navigate('/recipient-registration');
+  };
+
   return (
     <div className="donor-page">
       <div className="donor-hero">
-        <h1>Find Nearby Donors</h1>
-        <p className="donor-hero-sub">Filter by blood group, location, or search by name/phone.</p>
+        <div className="donor-hero-top">
+          <div>
+            <h1>Find Nearby Donors</h1>
+            <p className="donor-hero-sub">Filter by blood group, location, or search by name/phone.</p>
+          </div>
+          {showNeedLater && (
+            <button className="need-later-button" onClick={handleNeedLater}>
+              Need later
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="filters">
@@ -94,10 +115,20 @@ function DonorList() {
               </div>
 
               <div className="donor-actions">
-                <a className="cta call" href={`tel:${donor.phone || donor.phonenumber}`}>
-                  Call
+                <a 
+                  className="cta call" 
+                  href={`tel:${donor.phone || donor.phonenumber}`}
+                  aria-label={`Call ${donor.name}`}
+                  title={`Call ${donor.name} at ${donor.phone || donor.phonenumber}`}
+                >
+                  📞 Call
                 </a>
-                <button className="cta request" onClick={() => handleWhatsApp(donor)}>
+                <button 
+                  className="cta request" 
+                  onClick={() => handleWhatsApp(donor)}
+                  title={`WhatsApp ${donor.name}`}
+                  aria-label={`Message ${donor.name} on WhatsApp`}
+                >
                   WhatsApp
                 </button>
               </div>
