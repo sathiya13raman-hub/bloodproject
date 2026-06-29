@@ -1,4 +1,4 @@
-const BASE_URL = 'http://127.0.0.1:8000/api';
+const BASE_URL = 'https://bloody-vb0u.onrender.com/api';
 
 function getAuthHeaders() {
   const token = localStorage.getItem('accessToken');
