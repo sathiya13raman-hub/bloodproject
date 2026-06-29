@@ -1,7 +1,7 @@
 import Signup from './pages/signup'
 import Signin from './pages/signin'
 import './App.css'
-import Home from './pages/home'
+import Home from './pages/index'
 import DonorRegistration from './pages/donor'
 import DonorList from './pages/donorlist'
 import Recipient from './pages/Recipient'
